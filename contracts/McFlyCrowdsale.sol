@@ -128,6 +128,8 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         startTimeTLP1 = _startTimeTLP1; 
         endTimeTLP1 = startTimeTLP1.add(daysTLP1);
 
+        require(endTimeTLP1 < _startTimeTLP2);
+
         startTimeTLP2 = _startTimeTLP2; 
         endTimeTLP2 = startTimeTLP2.add(daysTLP2);
 
@@ -203,10 +205,9 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
      * @param _at — new start date
      */
     function setStartTimeTLP2(uint256 _at) onlyOwner {
-        require(startTimeTLP2 > block.timestamp); // forbid change time when TLP1.2 is active
-        require(_at < startTimeTLP2 + 30 days); // should be uint32
+        require(block.timestamp < startTimeTLP2); // forbid change time when TLP1.2 is active
         require(block.timestamp < _at); // should be great than current block timestamp
-        require(startTimeTLP2 < _at); // maybe useless
+        require(endTimeTLP1 < _at); // should be great than end TLP1.1
 
         startTimeTLP2 = _at;
         endTimeTLP2 = startTimeTLP2.add(daysTLP2);
