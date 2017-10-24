@@ -1,6 +1,6 @@
 {
-    "name": "mcfly-ico",
-    "version": "0.1.0",
+    "name": "mcfly-smart-contract",
+    "version": "0.1.1",
     "description": "",
     "main": "truffle.js",
     "directories": {

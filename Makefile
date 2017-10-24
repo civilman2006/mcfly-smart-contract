@@ -1,6 +1,6 @@
 compile: deps
 	@truffle --network local compile
-	@solidity_flattener --solc-paths=zeppelin-solidity=$(shell pwd)/node_modules/zeppelin-solidity/ contracts/McFlyCrowdsale.sol > build/CombinedCrowdsale.sol 
+	@solidity_flattener --solc-paths=zeppelin-solidity=$(shell pwd)/node_modules/zeppelin-solidity/ contracts/McFlyCrowdsale.sol | sed 's|^pragma solidity \^0.4.13|pragma solidity \^0.4.15|g' > build/CombinedCrowdsale.sol
 	@solc zeppelin-solidity=$(shell pwd)/node_modules/zeppelin-solidity/ contracts/McFlyToken.sol  --abi  2>/dev/null| grep :McFlyToken -A2 | tail -n1 | python -m json.tool > build/McFlyToken.abi
 	@solc zeppelin-solidity=$(shell pwd)/node_modules/zeppelin-solidity/ contracts/McFlyCrowdsale.sol  --abi  2>/dev/null| grep :McFlyCrowdsale -A2 | tail -n1 | python -m json.tool > build/McFlyCrowdsale.abi
 
