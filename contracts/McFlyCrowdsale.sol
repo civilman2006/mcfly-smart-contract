@@ -26,12 +26,12 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     // start and end timestamp for TLP1.1, endTimeTLP1 calculate from startTimeTLP1
     uint256 public startTimeTLP1;
     uint256 public endTimeTLP1;
-    uint256 daysTLP1 = 15 days;
+    uint256 daysTLP1 = 12 days;
 
     // start and end timestamp for TLP1.2, endTimeTLP2 calculate from startTimeTLP2
     uint256 public startTimeTLP2;
     uint256 public endTimeTLP2;
-    uint256 daysTLP2 = 25 days;
+    uint256 daysTLP2 = 24 days;
 
     // Percents
     uint256 fundPercents = 15;
@@ -54,7 +54,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     address public fundMintingAgent;
 
     // Rewards
-    // WAVES 10%
+    // WAVES
     // maximum possible tokens to convert from WAVES
     uint256 public wavesTokens = 100e24; // 100,000,000 MFL
     address public wavesAgent;
