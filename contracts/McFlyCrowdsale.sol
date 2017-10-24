@@ -85,9 +85,9 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
 
 
     event TokenPurchase(address indexed beneficiary, uint256 value, uint256 amount);
-    event OddMoney(address indexed beneficiary, uint256 value);
+    event TransferOddEther(address indexed beneficiary, uint256 value);
     event FundMinting(address indexed beneficiary, uint256 value);
-    event TeamVesting(address indexed beneficiary, uint256 value);
+    event TeamVesting(address indexed beneficiary, uint256 period, uint256 value);
     event SetFundMintingAgent(address new_agent);
     event SetStartTimeTLP2(uint256 new_startTimeTLP2);
 
@@ -203,9 +203,9 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
      * @param _at — new start date
      */
     function setStartTimeTLP2(uint256 _at) onlyOwner {
-        require(startTimeTLP2 < block.timestamp); // forbid change time when TLP1.2 is active
-        require(_at < 2 ** 32 - 1); // should be uint32
-        require(_at > block.timestamp); // should be great than current block timestamp
+        require(startTimeTLP2 > block.timestamp); // forbid change time when TLP1.2 is active
+        require(_at < startTimeTLP2 + 30 days); // should be uint32
+        require(block.timestamp < _at); // should be great than current block timestamp
         require(startTimeTLP2 < _at); // maybe useless
 
         startTimeTLP2 = _at;
@@ -349,7 +349,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
 
         if(odd_ethers > 0) {
             require(odd_ethers < msg.value);
-            OddMoney(contributor, odd_ethers);
+            TransferOddEther(contributor, odd_ethers);
             contributor.transfer(odd_ethers);
         }
 
@@ -357,17 +357,21 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     }
 
     function teamWithdraw() public {
+        // check
         require(token.mintingFinished());
         require(msg.sender == teamWallet || isOwner());
 
         uint256 currentPeriod = (block.timestamp).sub(endTimeTLP2).div(teamVestingPeriodInSeconds);
+        if(currentPeriod > teamVestingPeriodsCount) {
+            currentPeriod = teamVestingPeriodsCount;
+        }
         uint256 tokenAvailable = teamTokens.mul(currentPeriod).div(teamVestingPeriodsCount).sub(teamTotalSupply);
 
         require(teamTotalSupply + tokenAvailable <= teamTokens);
 
         teamTotalSupply = teamTotalSupply.add(tokenAvailable);
 
-        TeamVesting(teamWallet, tokenAvailable);
+        TeamVesting(teamWallet, currentPeriod, tokenAvailable);
         token.transfer(teamWallet, tokenAvailable);
 
     }
