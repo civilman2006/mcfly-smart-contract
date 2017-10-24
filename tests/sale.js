@@ -246,9 +246,19 @@ contract('Crowdsale', (accounts) => {
     });
 
     it("buyTokens → received lower than 0.01 ether", async() => {
+
         await increaseTime(duration.weeks(1));
 
+        let token_purchase_events = (await sale.TokenPurchase({fromBlock: 0, toBlock: 'latest'}))
+
         await sale.buyTokens(client2, {from: client1, value: 1e18});
+
+        token_purchase_events.get((err, events) => {
+            console.log(events);
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'TokenPurchase');
+        });
+
         await shouldHaveException(async () => {
             await sale.buyTokens(client2, {from: client1, value: 0.009e18});
         }, "Should has an error");
@@ -337,7 +347,13 @@ contract('Crowdsale', (accounts) => {
         let balance1 = await web3.eth.getBalance(client1);
         let token_balance1 = await token.balanceOf(client1);
 
+        let odd_ethers_events = (await sale.TransferOddEther({fromBlock: 0, toBlock: 'latest'}))
         await web3.eth.sendTransaction({from: client1, to: sale.address, value: maxWei + 10e18});
+
+        odd_ethers_events.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'TransferOddEther');
+        });
 
         let balance2 = await web3.eth.getBalance(client1);
         let token_balance2 = await token.balanceOf(client1);
@@ -377,6 +393,7 @@ contract('Crowdsale', (accounts) => {
         assert.equal((await token.mintingFinished()), true);
 
         totalSupply = (await token.totalSupply()).toNumber();
+        assert.equal(totalSupply, (await sale.hardCapInTokens()).toNumber());
 
         end_balance = (await web3.eth.getBalance(wallet)).toNumber();
         assert.equal(Math.round((end_balance - started_balance)/1e18), Math.round(maxWei/1e18));
@@ -425,6 +442,19 @@ contract('Crowdsale', (accounts) => {
         });
     });
 
+    it("wavesAgent → waves agent can transfer waves tokens without time lock", async () => {
+
+        let token_balance1 = await token.balanceOf(client1);
+        await web3.eth.sendTransaction({from: client1, to: wavesAgent, value: 10e18});
+        await token.transfer(client1, 1000e18, {from: wavesAgent});
+        let token_balance2 = await token.balanceOf(client1);
+        assert.equal(token_balance2-token_balance1, 1000e18);
+
+        await shouldHaveException(async () => {
+            await token.transfer(wavesAgent, 1000e18, {from: client1});
+        }, "Should has an error");
+    });
+
     it("finishCrowdsale → test onlyOwner", async() => {
         let mintCapInTokens = await sale.mintCapInTokens();
         let maxWei = (mintCapInTokens-wavesTokens)/1000*0.065;
@@ -441,5 +471,206 @@ contract('Crowdsale', (accounts) => {
         await sale.finishCrowdsale({from: owner});
     });
 
+    it("fundMinting → before, after and between", async() => {
+        await web3.eth.sendTransaction({from: client1, to: fundMintingAgent, value: 10e18});
+
+        await sale.fundMinting(client2, 100e18, {from: fundMintingAgent});
+
+        await increaseTime(duration.weeks(1));
+        await sale.fundMinting(client2, 100e18, {from: fundMintingAgent});
+
+        await increaseTime(duration.days(13));
+        await sale.fundMinting(client2, 100e18, {from: fundMintingAgent});
+
+        await increaseTime(duration.days(20));
+        await shouldHaveException(async () => {
+            await sale.fundMinting(client2, 100e18, {from: fundMintingAgent});
+        }, "Should has an error");
+    });
+
+
+    it("fundMinting → sell all allowed and try to sell over limit", async() => {
+        let fund_minting_events = (await sale.FundMinting({fromBlock: 0, toBlock: 'latest'}))
+        let fundTokens = (await sale.fundTokens()).toNumber();
+
+        await web3.eth.sendTransaction({from: client1, to: fundMintingAgent, value: 10e18});
+
+        await sale.fundMinting(client1, fundTokens, {from: fundMintingAgent});
+
+        fund_minting_events.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'FundMinting');
+        });
+
+        await shouldHaveException(async () => {
+            await sale.fundMinting(client1, 100e18, {from: fundMintingAgent});
+        }, "Should has an error");
+    });
+
+    it("teamWithdraw → try to withdraw before end", async() => {
+        await web3.eth.sendTransaction({from: client1, to: teamWallet, value: 10e18});
+        await increaseTime(duration.weeks(1));
+        await shouldHaveException(async () => {
+            await sale.teamWithdraw({from: teamWallet});
+        }, "Should has an error");
+
+    });
+
+    it("teamWithdraw → withdraw 1,2,5,8,12 and 13", async() => {
+        await increaseTime(duration.weeks(1));
+        let mintCapInTokens = await sale.mintCapInTokens();
+        let maxWei = (mintCapInTokens-wavesTokens)/1000*0.065;
+        await web3.eth.sendTransaction({from: client1, to: teamWallet, value: 10e18});
+        await web3.eth.sendTransaction({from: client1, to: sale.address, value: maxWei});
+        await sale.finishCrowdsale();
+
+        await increaseTime(duration.days(57));
+        await sale.teamWithdraw({from: teamWallet});
+
+        await increaseTime(duration.days(31));
+        await sale.teamWithdraw({from: teamWallet});
+
+        await increaseTime(duration.days(31*3));
+        await sale.teamWithdraw({from: teamWallet});
+        await increaseTime(duration.days(31*3));
+        await sale.teamWithdraw({from: teamWallet});
+
+        await increaseTime(duration.days(31*4));
+        await sale.teamWithdraw({from: teamWallet});
+
+        assert.notEqual(
+            (await token.balanceOf(teamWallet)).toNumber(), 
+            (await sale.teamTokens()).toNumber()
+        );
+
+        await increaseTime(duration.days(31*4));
+        await sale.teamWithdraw({from: teamWallet});
+
+        await increaseTime(duration.days(365));
+        await sale.teamWithdraw({from: teamWallet});
+
+        assert.equal(
+            (await token.balanceOf(teamWallet)).toNumber(), 
+            (await sale.teamTokens()).toNumber()
+        );
+    });
+
+    it("teamWithdraw → withdraw 12", async() => {
+        await increaseTime(duration.weeks(1));
+        let mintCapInTokens = await sale.mintCapInTokens();
+        let maxWei = (mintCapInTokens-wavesTokens)/1000*0.065;
+        await web3.eth.sendTransaction({from: client1, to: sale.address, value: maxWei});
+        await sale.finishCrowdsale();
+
+        let team_vesting_events = (await sale.TeamVesting({fromBlock: 0, toBlock: 'latest'}))
+
+        assert.equal((await token.balanceOf(teamWallet)).toNumber(), 0);
+
+        await increaseTime(duration.days(31*14));
+        await sale.teamWithdraw({from: teamWallet});
+
+        team_vesting_events.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'TeamVesting');
+        });
+
+        assert.equal(
+            (await token.balanceOf(teamWallet)).toNumber(), 
+            (await sale.teamTokens()).toNumber()
+        );
+    });
+
+    it("teamWithdraw → withdraw 12 with wrong owner", async() => {
+        await increaseTime(duration.weeks(1));
+        let mintCapInTokens = await sale.mintCapInTokens();
+        let maxWei = (mintCapInTokens-wavesTokens)/1000*0.065;
+        await web3.eth.sendTransaction({from: client1, to: sale.address, value: maxWei});
+        await sale.finishCrowdsale();
+
+        let team_vesting_events = (await sale.TeamVesting({fromBlock: 0, toBlock: 'latest'}))
+
+        await increaseTime(duration.days(31*12));
+
+        await shouldHaveException(async () => {
+            await sale.teamWithdraw({from: client1});
+        }, "Should has an error");
+
+        team_vesting_events.get((err, events) => {
+            assert.equal(events.length, 0);
+        });
+
+    });
+
+    it("teamWithdraw → withdraw 12 with contract owner", async() => {
+        await increaseTime(duration.weeks(1));
+        let mintCapInTokens = await sale.mintCapInTokens();
+        let maxWei = (mintCapInTokens-wavesTokens)/1000*0.065;
+        await web3.eth.sendTransaction({from: client1, to: sale.address, value: maxWei});
+        await sale.finishCrowdsale();
+
+        await increaseTime(duration.days(31*12));
+        let team_vesting_events = (await sale.TeamVesting({fromBlock: 0, toBlock: 'latest'}))
+        await sale.teamWithdraw({from: owner});
+
+        team_vesting_events.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'TeamVesting');
+        });
+
+    });
+
+    it("setStartTimeTLP2 → set and check", async() => {
+        let set_start_time_tlp2 = (await sale.SetStartTimeTLP2({fromBlock: 0, toBlock: 'latest'}))
+
+        let time1 = await sale.startTimeTLP2();
+        await sale.setStartTimeTLP2(startTime2 + duration.days(1));
+
+        set_start_time_tlp2.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'SetStartTimeTLP2');
+        });
+
+        let time2 = await sale.startTimeTLP2();
+        assert.equal(time2-time1, duration.days(1));
+    });
+
+    it("setStartTimeTLP2 → wrong owner", async() => {
+        let set_start_time_tlp2 = (await sale.SetStartTimeTLP2({fromBlock: 0, toBlock: 'latest'}))
+
+
+        await shouldHaveException(async () => {
+            await sale.setStartTimeTLP2(startTime2 + duration.days(1), {from: client1});
+        }, "Should has an error");
+
+        set_start_time_tlp2.get((err, events) => {
+            assert.equal(events.length, 0);
+        });
+
+    });
+
+    it("setFundMintingAgent → good owner", async() => {
+        let set_fund_minting_events = (await sale.SetFundMintingAgent({fromBlock: 0, toBlock: 'latest'}))
+
+        await sale.setFundMintingAgent(client2);
+
+        set_fund_minting_events.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'SetFundMintingAgent');
+        });
+
+    });
+
+    it("setFundMintingAgent → wrong owner", async() => {
+        let set_fund_minting_events = (await sale.SetFundMintingAgent({fromBlock: 0, toBlock: 'latest'}))
+
+        await shouldHaveException(async () => {
+            await sale.setFundMintingAgent(client2, {from: client1});
+        }, "Should has an error");
+
+        set_fund_minting_events.get((err, events) => {
+            assert.equal(events.length, 0);
+        });
+
+    });
 });
 
