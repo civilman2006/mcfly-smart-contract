@@ -345,8 +345,11 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         require(contributor != 0x0) ;
         require(amount + token.totalSupply() <= mintCapInTokens);
 
+        ethers = (msg.value - odd_ethers);
+
         token.mint(contributor, amount); // fail if minting is finished
-        TokenPurchase(contributor, msg.value, amount);
+        TokenPurchase(contributor, ethers, amount);
+        totalETH += ethers;
 
         if(odd_ethers > 0) {
             require(odd_ethers < msg.value);
