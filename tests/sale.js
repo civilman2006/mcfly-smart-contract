@@ -211,7 +211,7 @@ contract('Crowdsale', (accounts) => {
         await web3.eth.sendTransaction({from: client1, to: sale.address, value: 1e18});
         balance2 = await web3.eth.getBalance(wallet);
 
-        assert.equal(Math.round((balance2 - balance1)/1e18), 1);
+        assert.equal(Math.round((balance2 - balance1)/1e14), 1e4);
     });
 
 
