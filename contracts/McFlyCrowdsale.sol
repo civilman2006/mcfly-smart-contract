@@ -17,18 +17,21 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     uint256 public minimalWeiTLP2 = 2e17; // 0.2 ETH
     uint256 public priceTLP2 = 2e14; // 0.0002 ETH
 
+    // Total ETH received during WAVES, TLP1.1 and TLP1.2
+    uint256 public totalETH;
+
     // Token
     McFlyToken public token;
 
     // Withdraw wallet
     address public wallet;
 
-    // start and end timestamp for TLP1.1, endTimeTLP1 calculate from startTimeTLP1
+    // start and end timestamp for TLP 1.1, endTimeTLP1 calculate from startTimeTLP1
     uint256 public startTimeTLP1;
     uint256 public endTimeTLP1;
     uint256 daysTLP1 = 12 days;
 
-    // start and end timestamp for TLP1.2, endTimeTLP2 calculate from startTimeTLP2
+    // start and end timestamp for TLP 1.2, endTimeTLP2 calculate from startTimeTLP2
     uint256 public startTimeTLP2;
     uint256 public endTimeTLP2;
     uint256 daysTLP2 = 24 days;
@@ -143,6 +146,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         advisoryWallet = _advisoryWallet;
         reservedWallet = _reservedWallet;
 
+        totalETH = wavesTokens.mul(priceTLP1.mul(65).div(100)).div(1e18); // 6500 for 100,000,000 MFL from WAVES
         token.mint(wavesAgent, wavesTokens);
         token.allowTransfer(wavesAgent);
     }
@@ -216,8 +220,8 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
 
     /*
      * @dev Large Token Holder minting 
-     * @param to — mint to address
-     * @amount - how much mint
+     * @param to - mint to address
+     * @param amount - how much mint
      */
     function fundMinting(address to, uint256 amount) stopInEmergency {
         require(msg.sender == fundMintingAgent || isOwner());
@@ -339,6 +343,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     function buyTokens(address contributor) payable stopInEmergency validPurchase public {
         uint256 amount;
         uint256 odd_ethers;
+        uint256 ethers;
         
         (amount, odd_ethers) = calcAmountAt(msg.value, block.timestamp, token.totalSupply());
   
@@ -357,7 +362,8 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
             contributor.transfer(odd_ethers);
         }
 
-        wallet.transfer(msg.value - odd_ethers);
+
+        wallet.transfer(ethers);
     }
 
     function teamWithdraw() public {
