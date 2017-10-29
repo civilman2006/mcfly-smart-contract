@@ -219,6 +219,19 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     }
 
     /*
+     * @dev set TLP1.1 start date
+     * @param _at - new start date
+     */
+    function setStartTimeTLP1(uint256 _at) onlyOwner {
+        require(block.timestamp < startTimeTLP1); // forbid change time when TLP1.1 is active
+        require(block.timestamp < _at); // should be great than current block timestamp
+
+        startTimeTLP1 = _at;
+        endTimeTLP1 = startTimeTLP1.add(daysTLP1);
+        SetStartTimeTLP1(_at);
+    }
+
+    /*
      * @dev Large Token Holder minting 
      * @param to - mint to address
      * @param amount - how much mint
