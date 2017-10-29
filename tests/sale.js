@@ -254,7 +254,6 @@ contract('Crowdsale', (accounts) => {
         await sale.buyTokens(client2, {from: client1, value: 1e18});
 
         token_purchase_events.get((err, events) => {
-            console.log(events);
             assert.equal(events.length, 1);
             assert.equal(events[0].event, 'TokenPurchase');
         });
@@ -427,9 +426,52 @@ contract('Crowdsale', (accounts) => {
         assert.equal(Math.round(totalSupply/100*2/1e14), Math.round(tokenOnBountyOnlineWallet/1e14));
         assert.equal(await sale.bountyOnlineTokens(), tokenOnBountyOnlineWallet);
 
-
     });
 
+    it("{bountyOnline,bountyOffline,reserved,team,advisory}Tokens → before finish", async () => {
+        assert.equal((await sale.bountyOnlineTokens()).toNumber(), wavesTokens / 70 * 2, 'bountyOnlineTokens');
+        assert.equal((await sale.bountyOfflineTokens()).toNumber(), wavesTokens / 70 * 3, 'bountyOfflineTokens');
+        assert.equal((await sale.advisoryTokens()).toNumber(), wavesTokens / 70 * 5, 'advisoryTokens');
+        assert.equal((await sale.reservedTokens()).toNumber(), wavesTokens / 70 * 10, 'reservedTokens');
+        assert.equal((await sale.teamTokens()).toNumber(), wavesTokens / 70 * 10, 'teamTokens');
+    });
+
+
+    it("{bountyOnline,bountyOffline,reserved,team,advisory}Tokens → after finish", async () => {
+  
+        let mintCapInTokens = await sale.mintCapInTokens();
+        let maxWei = (mintCapInTokens-wavesTokens)/1000*0.065;
+
+        await increaseTime(duration.weeks(1));
+        await web3.eth.sendTransaction({from: client1, to: sale.address, value: maxWei});
+        await sale.finishCrowdsale();
+
+        assert.equal(
+            Math.round((await sale.bountyOnlineTokens()).toNumber()/1e10),
+            Math.round(mintCapInTokens / 70 * 2 / 1e10),
+            'bountyOnlineTokens'
+        );
+        assert.equal(
+            Math.round((await sale.bountyOfflineTokens()).toNumber()/1e10),
+            Math.round(mintCapInTokens  / 70 * 3 / 1e10),
+            'bountyOfflineTokens'
+        );
+        assert.equal(
+            Math.round((await sale.advisoryTokens()).toNumber()/1e14),
+            Math.round(mintCapInTokens / 1e14 / 70 * 5),
+            'advisoryTokens'
+        );
+        assert.equal(
+            Math.round((await sale.reservedTokens()).toNumber()/1e14),
+            Math.round(mintCapInTokens / 70 * 10 / 1e14),
+            'reservedTokens'
+        );
+        assert.equal(
+            Math.round((await sale.teamTokens()).toNumber()/1e14),
+            Math.round(mintCapInTokens / 70 * 10 / 1e14),
+            'teamTokens'
+        );
+    });
     it("Transfer → should do something that fires Transfer", async () => {
         let transfers = (await token.Transfer({fromBlock: 0, toBlock: 'latest'}))
 
@@ -616,6 +658,29 @@ contract('Crowdsale', (accounts) => {
             assert.equal(events.length, 1);
             assert.equal(events[0].event, 'TeamVesting');
         });
+
+    });
+
+    it("setStartTimeTLP1 → set and check", async() => {
+        let set_start_time_tlp1 = (await sale.SetStartTimeTLP1({fromBlock: 0, toBlock: 'latest'}))
+
+        let time1 = await sale.startTimeTLP1();
+        await sale.setStartTimeTLP1(startTime1 + duration.days(1));
+
+        set_start_time_tlp1.get((err, events) => {
+            assert.equal(events.length, 1);
+            assert.equal(events[0].event, 'SetStartTimeTLP1');
+        });
+
+        let time2 = await sale.startTimeTLP1();
+        assert.equal(time2-time1, duration.days(1));
+
+        await increaseTime(duration.days(8));
+
+        await shouldHaveException(async () => {
+            await sale.setStartTimeTLP1(time3 + duration.days(1));
+        }, "Should has an error");
+
 
     });
 
