@@ -65,25 +65,25 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     // Team 10%
     uint256 teamVestingPeriodInSeconds = 31 days;
     uint256 teamVestingPeriodsCount = 12;
-    uint256 public teamTokens;
+    uint256 _teamTokens;
     uint256 public teamTotalSupply;
     address public teamWallet;
 
     // Bounty 5% (2% + 3%)
     // Bounty online 2%
-    uint256 public bountyOnlineTokens;
+    uint256 _bountyOnlineTokens;
     address public bountyOnlineWallet;
 
     // Bounty offline 3%
-    uint256 public bountyOfflineTokens;
+    uint256 _bountyOfflineTokens;
     address public bountyOfflineWallet;
 
     // Advisory 5%
-    uint256 public advisoryTokens;
+    uint256 _advisoryTokens;
     address public advisoryWallet;
 
     // Reserved for future 10%
-    uint256 public reservedTokens;
+    uint256 _reservedTokens;
     address public reservedWallet;
 
 
@@ -92,6 +92,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     event FundMinting(address indexed beneficiary, uint256 value);
     event TeamVesting(address indexed beneficiary, uint256 period, uint256 value);
     event SetFundMintingAgent(address new_agent);
+    event SetStartTimeTLP1(uint256 new_startTimeTLP1);
     event SetStartTimeTLP2(uint256 new_startTimeTLP2);
 
 
@@ -160,6 +161,41 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     // @return false if crowdsale event was ended
     function running() constant public returns (bool) {
         return withinPeriod() && !token.mintingFinished();
+    }
+
+    function teamTokens() constant public returns (uint256) {
+        if(_teamTokens > 0) {
+            return _teamTokens;
+        }
+        return token.totalSupply().mul(teamPercents).div(70);
+    }
+
+    function bountyOnlineTokens() constant public returns (uint256) {
+        if(_bountyOnlineTokens > 0) {
+            return _bountyOnlineTokens;
+        }
+        return token.totalSupply().mul(bountyOnlinePercents).div(70);
+    }
+
+    function bountyOfflineTokens() constant public returns (uint256) {
+        if(_bountyOfflineTokens > 0) {
+            return _bountyOfflineTokens;
+        }
+        return token.totalSupply().mul(bountyOfflinePercents).div(70);
+    }
+
+    function advisoryTokens() constant public returns (uint256) {
+        if(_advisoryTokens > 0) {
+            return _advisoryTokens;
+        }
+        return token.totalSupply().mul(advisoryPercents).div(70);
+    }
+
+    function reservedTokens() constant public returns (uint256) {
+        if(_reservedTokens > 0) {
+            return _reservedTokens;
+        }
+        return token.totalSupply().mul(reservedPercents).div(70);
     }
 
     // @return current stage name
@@ -375,12 +411,10 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
             contributor.transfer(odd_ethers);
         }
 
-
         wallet.transfer(ethers);
     }
 
     function teamWithdraw() public {
-        // check
         require(token.mintingFinished());
         require(msg.sender == teamWallet || isOwner());
 
@@ -388,9 +422,9 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         if(currentPeriod > teamVestingPeriodsCount) {
             currentPeriod = teamVestingPeriodsCount;
         }
-        uint256 tokenAvailable = teamTokens.mul(currentPeriod).div(teamVestingPeriodsCount).sub(teamTotalSupply);
+        uint256 tokenAvailable = _teamTokens.mul(currentPeriod).div(teamVestingPeriodsCount).sub(teamTotalSupply);
 
-        require(teamTotalSupply + tokenAvailable <= teamTokens);
+        require(teamTotalSupply + tokenAvailable <= _teamTokens);
 
         teamTotalSupply = teamTotalSupply.add(tokenAvailable);
 
@@ -406,20 +440,20 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         uint256 _totalSupply = token.totalSupply();
 
         // rewards
-        teamTokens = _totalSupply.mul(teamPercents).div(70); // 180,000,000 MFL
-        token.mint(this, teamTokens); // mint to contract address
+        _teamTokens = _totalSupply.mul(teamPercents).div(70); // 180,000,000 MFL
+        token.mint(this, _teamTokens); // mint to contract address
 
-        reservedTokens = _totalSupply.mul(reservedPercents).div(70); // 180,000,000 MFL
-        token.mint(reservedWallet, reservedTokens);
+        _reservedTokens = _totalSupply.mul(reservedPercents).div(70); // 180,000,000 MFL
+        token.mint(reservedWallet, _reservedTokens);
 
-        advisoryTokens = _totalSupply.mul(advisoryPercents).div(70); // 90,000,000 MFL
-        token.mint(advisoryWallet, advisoryTokens);
+        _advisoryTokens = _totalSupply.mul(advisoryPercents).div(70); // 90,000,000 MFL
+        token.mint(advisoryWallet, _advisoryTokens);
 
-        bountyOfflineTokens = _totalSupply.mul(bountyOfflinePercents).div(70); // 54,000,000 MFL
-        token.mint(bountyOfflineWallet, bountyOfflineTokens);
+        _bountyOfflineTokens = _totalSupply.mul(bountyOfflinePercents).div(70); // 54,000,000 MFL
+        token.mint(bountyOfflineWallet, _bountyOfflineTokens);
 
-        bountyOnlineTokens = _totalSupply.mul(bountyOnlinePercents).div(70); // 36,000,000 MFL
-        token.mint(bountyOnlineWallet, bountyOnlineTokens);
+        _bountyOnlineTokens = _totalSupply.mul(bountyOnlinePercents).div(70); // 36,000,000 MFL
+        token.mint(bountyOnlineWallet, _bountyOnlineTokens);
 
         token.finishMinting();
    }
