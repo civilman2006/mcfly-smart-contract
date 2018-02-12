@@ -1,12 +1,12 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.19;
 
-import 'zeppelin-solidity/contracts/token/MintableToken.sol';
-
+import './MintableToken.sol';
+improt './McFlyToken.sol';
 
 contract McFlyToken is MintableToken {
 
-    string public constant name = 'McFly';
-    string public constant symbol = 'MFL';
+    string public constant name = 'McFlyToken';
+    string public constant symbol = 'McFly';
     uint8 public constant decimals = 18;
 
     mapping(address=>bool) whitelist;
@@ -19,20 +19,20 @@ contract McFlyToken is MintableToken {
         _;        
     }
 
-    function allowTransfer(address from) onlyOwner {
+    function allowTransfer(address from) onlyOwner public {
         AllowTransfer(from);
         whitelist[from] = true;
     }
 
-    function transferFrom(address from, address to, uint256 value) canTransfer returns (bool) {
+    function transferFrom(address from, address to, uint256 value) canTransfer public returns (bool) {
         return super.transferFrom(from, to, value);
     }
 
-    function transfer(address to, uint256 value) canTransfer returns (bool) {
+    function transfer(address to, uint256 value) canTransfer public returns (bool) {
         return super.transfer(to, value);
     }
 
-    function burn(address from) onlyOwner returns (bool) {
+    function burn(address from) onlyOwner public returns (bool) {
         Transfer(from, 0x0, balances[from]);
         Burn(from, balances[from]);
 
@@ -40,3 +40,4 @@ contract McFlyToken is MintableToken {
         balances[from] = 0;
     }
 }
+

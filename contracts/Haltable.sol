@@ -1,7 +1,7 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.19;
 
 import './MultiOwners.sol';
-
+import './SafeMath.sol';
 
 contract Haltable is MultiOwners {
     bool public halted;
