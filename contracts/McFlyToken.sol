@@ -1,7 +1,6 @@
 pragma solidity ^0.4.19;
 
 import './MintableToken.sol';
-improt './McFlyToken.sol';
 
 contract McFlyToken is MintableToken {
 
