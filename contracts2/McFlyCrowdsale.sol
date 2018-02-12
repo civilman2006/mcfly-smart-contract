@@ -6,7 +6,7 @@ import './Haltable.sol';
 import './MultiOwners.sol';
 
 
-contract McFlyCrowdsale is MultiOwners, Haltable {
+contract McFlyCrowd is MultiOwners, Haltable {
     using SafeMath for uint256;
 
     // Total ETH received during WAVES, TLP1.2 & window[1-5]
@@ -73,10 +73,10 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     // maximum possible tokens for sell 
     uint256 public mintCapInTokens = hardCapInTokens.mul(70).div(100); // 1,260,000,000 MFL
 
-    // tokens saled within TLP2
-    uint256 public saledTokensTLP2;
+    // tokens crowd within TLP2
+    uint256 public crowdTokensTLP2;
 
-    // tokens saled before this contract (MFL tokens)
+    // tokens crowd before this contract (MFL tokens)
     uint256 public preMcFlyTotalSupply;
 
     // maximum possible tokens for fund minting
@@ -92,26 +92,26 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     uint256 public window4CapInTokens;
     uint256 public window5CapInTokens;
 
-    // array of investors (addr, amount of eth) for window Nx
-    struct Investor1 { uint256 eth_in; }
-    mapping (address => Investor1) investors1;
-    address[] public investorAccts1;
+    // array of ppls (addr, amount of eth) for window Nx
+    struct Ppl1 { uint256 eth_in; }
+    mapping (address => Ppl1) ppls1;
+    address[] public pplAccts1;
     
-    struct Investor2 { uint256 eth_in; }
-    mapping (address => Investor2) investors2;
-    address[] public investorAccts2;
+    struct Ppl2 { uint256 eth_in; }
+    mapping (address => Ppl2) ppls2;
+    address[] public pplAccts2;
     
-    struct Investor3 { uint256 eth_in; }
-    mapping (address => Investor3) investors3;
-    address[] public investorAccts3;
+    struct Ppl3 { uint256 eth_in; }
+    mapping (address => Ppl3) ppls3;
+    address[] public pplAccts3;
     
-    struct Investor4 { uint256 eth_in; }
-    mapping (address => Investor4) investors4;
-    address[] public investorAccts4;
+    struct Ppl4 { uint256 eth_in; }
+    mapping (address => Ppl4) ppls4;
+    address[] public pplAccts4;
     
-    struct Investor5 { uint256 eth_in; }
-    mapping (address => Investor5) investors5;
-    address[] public investorAccts5;
+    struct Ppl5 { uint256 eth_in; }
+    mapping (address => Ppl5) ppls5;
+    address[] public pplAccts5;
 
     // Rewards
     // WAVES
@@ -176,7 +176,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     }
 
     // constructor run once!
-    function McFlyCrowdsale(
+    function McFlyCrowd(
         uint256 _startTimeTLP2,
         uint256 _preMcFlyTotalSupply,
         address _wallet,
@@ -224,11 +224,11 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         _preMcFlyTokens = _preMcFlyTotalSupply; // McFly for thansfer to old MFL owners
         token.mint(preMcFlyWallet, _preMcFlyTokens);
         token.allowTransfer(preMcFlyWallet);
-        saledTokensTLP2 = saledTokensTLP2.add(_preMcFlyTokens);
+        crowdTokensTLP2 = crowdTokensTLP2.add(_preMcFlyTokens);
 
         token.mint(wavesAgent, wavesTokens); // 100,000,000 MFL
         token.allowTransfer(wavesAgent);
-        saledTokensTLP2 = saledTokensTLP2.add(wavesTokens);
+        crowdTokensTLP2 = crowdTokensTLP2.add(wavesTokens);
 
         // rewards !!!!
         _teamTokens = 180e24; // 180,000,000 MFL
@@ -258,7 +258,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         return withinPeriodTLP2;
     }
 
-    // @return false if crowdsale event was ended
+    // @return false if crowd event was ended
     function running() constant public returns (bool) {
         return withinPeriod() && !token.mintingFinished();
     }
@@ -352,72 +352,72 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         return 'Finished';
     }
 
-    // get info about investors at window 1-5
-    function getInvestors(uint256 __at) view public returns(address[]) {
+    // get info about ppls at window 1-5
+    function getPpls(uint256 __at) view public returns(address[]) {
             if(__at >= startTimeTLP3 && __at <= endTimeTLP3) {
-                return investorAccts1;
+                return pplAccts1;
             }
             
             if(__at >= startTimeTLP4 && __at <= endTimeTLP4) {
-                return investorAccts2;
+                return pplAccts2;
             }
             
             if(__at >= startTimeTLP5 && __at <= endTimeTLP5) {
-                return investorAccts3;
+                return pplAccts3;
             }
             
             if(__at >= startTimeTLP6 && __at <= endTimeTLP6) {
-                return investorAccts4;
+                return pplAccts4;
             }
             
             if(__at >= startTimeTLP7 && __at <= endTimeTLP7) {
-                return investorAccts5;
+                return pplAccts5;
             }
     }
     
-    // get info about investors at window 1-5
-    function getInvestor(uint256 __at, address _address) view public returns (uint256) {
+    // get info about ppls at window 1-5
+    function getPpl(uint256 __at, address _address) view public returns (uint256) {
             if(__at >= startTimeTLP3 && __at <= endTimeTLP3) {
-                return (investors1[_address].eth_in);
+                return (ppls1[_address].eth_in);
             }
             
             if(__at >= startTimeTLP4 && __at <= endTimeTLP4) {
-                return (investors2[_address].eth_in);
+                return (ppls2[_address].eth_in);
             }
             
             if(__at >= startTimeTLP5 && __at <= endTimeTLP5) {
-                return (investors3[_address].eth_in);
+                return (ppls3[_address].eth_in);
             }
             
             if(__at >= startTimeTLP6 && __at <= endTimeTLP6) {
-                return (investors4[_address].eth_in);
+                return (ppls4[_address].eth_in);
             }
             
             if(__at >= startTimeTLP7 && __at <= endTimeTLP7) {
-                return (investors5[_address].eth_in);
+                return (ppls5[_address].eth_in);
             }
     }
     
-    // count investors at window 1-5
-    function countInvestors(uint256 __at) view public returns (uint) {
+    // count ppls at window 1-5
+    function countPpls(uint256 __at) view public returns (uint) {
             if(__at >= startTimeTLP3 && __at <= endTimeTLP3) {
-                return investorAccts1.length;
+                return pplAccts1.length;
             }
             
             if(__at >= startTimeTLP4 && __at <= endTimeTLP4) {
-                return investorAccts2.length;
+                return pplAccts2.length;
             }
             
             if(__at >= startTimeTLP5 && __at <= endTimeTLP5) {
-                return investorAccts3.length;
+                return pplAccts3.length;
             }
             
             if(__at >= startTimeTLP6 && __at <= endTimeTLP6) {
-                return investorAccts4.length;
+                return pplAccts4.length;
             }
             
             if(__at >= startTimeTLP7 && __at <= endTimeTLP7) {
-                return investorAccts5.length;
+                return pplAccts5.length;
             }
     }
 
@@ -425,7 +425,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
      * @dev fallback for processing ether
      */
     function() payable public {
-        return buyTokens(msg.sender);
+        return getTokens(msg.sender);
     }
 
     /*
@@ -491,7 +491,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
      * @param  _value - ether to be converted to tokens
      * @param  at - current time
      * @param  _totalSupply - total supplied tokens
-     * @return tokens amount that we should send to our dear investor
+     * @return tokens amount that we should send to our dear ppl
      * @return odd ethers amount, which contract should send back
      */
     function calcAmountAt(
@@ -543,7 +543,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
      * @dev sell token and send to contributor address
      * @param contributor address
      */
-    function buyTokens(address contributor) payable stopInEmergency validPurchase public {
+    function getTokens(address contributor) payable stopInEmergency validPurchase public {
         uint256 amount;
         uint256 odd_ethers;
         uint256 ethers;
@@ -563,7 +563,7 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
             token.mint(contributor, amount); // fail if minting is finished
             TokenPurchase(contributor, ethers, amount);
             counter_in += ethers;
-            saledTokensTLP2 = saledTokensTLP2.add(amount);
+            crowdTokensTLP2 = crowdTokensTLP2.add(amount);
 
             if(odd_ethers > 0) {
                 require(odd_ethers < msg.value);
@@ -577,41 +577,41 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
             require(msg.value >= minETHin); // checks min ETH income
 
             if(__at >= startTimeTLP3 && __at <= endTimeTLP3) {
-                var investor1 = investors1[contributor];
-                investor1.eth_in = msg.value;
-                investorAccts1.push(contributor) -1;
+                var ppl1 = ppls1[contributor];
+                ppl1.eth_in = msg.value;
+                pplAccts1.push(contributor) -1;
                 window1 = window1.add(msg.value);
                 window1_cnt++;
             }
             
             if(__at >= startTimeTLP4 && __at <= endTimeTLP4) {
-                var investor2 = investors2[contributor];
-                investor2.eth_in = msg.value;
-                investorAccts2.push(contributor) -1;
+                var ppl2 = ppls2[contributor];
+                ppl2.eth_in = msg.value;
+                pplAccts2.push(contributor) -1;
                 window2 = window2.add(msg.value);
                 window2_cnt++;
             }
             
             if(__at >= startTimeTLP5 && __at <= endTimeTLP5) {
-                var investor3 = investors3[contributor];
-                investor3.eth_in = msg.value;
-                investorAccts3.push(contributor) -1;
+                var ppl3 = ppls3[contributor];
+                ppl3.eth_in = msg.value;
+                pplAccts3.push(contributor) -1;
                 window3 = window3.add(msg.value);
                 window3_cnt++;
             }
             
             if(__at >= startTimeTLP6 && __at <= endTimeTLP6) {
-                var investor4 = investors4[contributor];
-                investor4.eth_in = msg.value;
-                investorAccts4.push(contributor) -1;
+                var ppl4 = ppls4[contributor];
+                ppl4.eth_in = msg.value;
+                pplAccts4.push(contributor) -1;
                 window4 = window4.add(msg.value);
                 window4_cnt++;
             }
             
             if(__at >= startTimeTLP7 && __at <= endTimeTLP7) {
-                var investor5 = investors5[contributor];
-                investor5.eth_in = msg.value;
-                investorAccts5.push(contributor) -1;
+                var ppl5 = ppls5[contributor];
+                ppl5.eth_in = msg.value;
+                pplAccts5.push(contributor) -1;
                 window5 = window5.add(msg.value);                
                 window5_cnt++;
             }
@@ -622,17 +622,17 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         }
     }
 
-    // close sale window N1 and transfer tokens to investors1 accts.
+    // close window N1 and transfer tokens to ppls1 accts.
     function closeWindow1() onlyOwner stopInEmergency public {
         uint256 _McFlyperETH;
         require(!window1isClosed);
         require(window1 > 0);
-        require(countInvestors(block.timestamp) > 0);
+        require(countPpls(block.timestamp) > 0);
 
         _McFlyperETH = window1CapInTokens.div(window1); // max McFly in window
 
-        for (uint i = 0; i < countInvestors(block.timestamp); i++) {
-            token.transfer(investorAccts1[i], (_McFlyperETH.mul(investors1[investorAccts1[i]].eth_in)));
+        for (uint i = 0; i < countPpls(block.timestamp); i++) {
+            token.transfer(pplAccts1[i], (_McFlyperETH.mul(ppls1[pplAccts1[i]].eth_in)));
         }  
         window1isClosed = true;
     }
@@ -641,12 +641,12 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         uint256 _McFlyperETH;
         require(!window2isClosed);
         require(window2 > 0);
-        require(countInvestors(block.timestamp) > 0);
+        require(countPpls(block.timestamp) > 0);
 
         _McFlyperETH = window2CapInTokens.div(window2); // max McFly in window
 
-        for (uint i = 0; i < countInvestors(block.timestamp); i++) {
-            token.transfer(investorAccts2[i], (_McFlyperETH.mul(investors2[investorAccts2[i]].eth_in)));
+        for (uint i = 0; i < countPpls(block.timestamp); i++) {
+            token.transfer(pplAccts2[i], (_McFlyperETH.mul(ppls2[pplAccts2[i]].eth_in)));
         }        
         window2isClosed = true;
     }
@@ -655,12 +655,12 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         uint256 _McFlyperETH;
         require(!window3isClosed);
         require(window3 > 0);
-        require(countInvestors(block.timestamp) > 0);
+        require(countPpls(block.timestamp) > 0);
 
         _McFlyperETH = window3CapInTokens.div(window3); // max McFly in window
 
-        for (uint i = 0; i < countInvestors(block.timestamp); i++) {
-            token.transfer(investorAccts3[i], (_McFlyperETH.mul(investors3[investorAccts3[i]].eth_in)));
+        for (uint i = 0; i < countPpls(block.timestamp); i++) {
+            token.transfer(pplAccts3[i], (_McFlyperETH.mul(ppls3[pplAccts3[i]].eth_in)));
         }      
         window3isClosed = true;
     }
@@ -669,12 +669,12 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         uint256 _McFlyperETH;
         require(!window4isClosed);
         require(window4 > 0);
-        require(countInvestors(block.timestamp) > 0);
+        require(countPpls(block.timestamp) > 0);
 
         _McFlyperETH = window4CapInTokens.div(window4); // max McFly in window
 
-        for (uint i = 0; i < countInvestors(block.timestamp); i++) {
-            token.transfer(investorAccts4[i], (_McFlyperETH.mul(investors4[investorAccts4[i]].eth_in)));
+        for (uint i = 0; i < countPpls(block.timestamp); i++) {
+            token.transfer(pplAccts4[i], (_McFlyperETH.mul(ppls4[pplAccts4[i]].eth_in)));
         }        
         window4isClosed = true;
     }
@@ -683,12 +683,12 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
         uint256 _McFlyperETH;
         require(!window5isClosed);
         require(window5 > 0);
-        require(countInvestors(block.timestamp) > 0);
+        require(countPpls(block.timestamp) > 0);
 
         _McFlyperETH = window5CapInTokens.div(window5); // max McFly in window
 
-        for (uint i = 0; i < countInvestors(block.timestamp); i++) {
-            token.transfer(investorAccts5[i], (_McFlyperETH.mul(investors5[investorAccts5[i]].eth_in)));
+        for (uint i = 0; i < countPpls(block.timestamp); i++) {
+            token.transfer(pplAccts5[i], (_McFlyperETH.mul(ppls5[pplAccts5[i]].eth_in)));
         }      
         window5isClosed = true;
     
@@ -752,11 +752,11 @@ contract McFlyCrowdsale is MultiOwners, Haltable {
     }
 
 
-    function finishCrowdsale() onlyOwner public {
+    function finishCrowd() onlyOwner public {
         require(now > endTimeTLP2 || hardCapInTokens == token.totalSupply());
         require(!token.mintingFinished());
 
-        windowsCapInTokens = saledTokensTLP2.add(fundTotalSupply);
+        windowsCapInTokens = crowdTokensTLP2.add(fundTotalSupply);
         window1CapInTokens = windowsCapInTokens.div(5);
         window2CapInTokens = windowsCapInTokens.div(5);
         window3CapInTokens = windowsCapInTokens.div(5);
