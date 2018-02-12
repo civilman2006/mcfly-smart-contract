@@ -477,7 +477,7 @@ contract McFlyCrowd is MultiOwners, Haltable {
      */
     function fundMinting(address to, uint256 amount) stopInEmergency public {
         require(msg.sender == fundMintingAgent || isOwner());
-        require(block.timestamp <= endTimeTLP2);
+        require(block.timestamp < startTimeTLP2);
         require(fundTotalSupply + amount <= fundTokens);
         require(token.totalSupply() + amount <= hardCapInTokens);
 
