@@ -1,7 +1,7 @@
 pragma solidity ^0.4.19;
 
 import './Ownable.sol';
-improt './McFlyToken.sol';
+import './McFlyToken.sol';
 
 contract ERC20Basic {
   uint256 public totalSupply;
